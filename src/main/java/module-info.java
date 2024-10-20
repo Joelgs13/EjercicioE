@@ -1,4 +1,4 @@
-module com.example.ejercicioe {
+module com.example.ejerciciod {
     requires javafx.controls;
     requires javafx.fxml;
 
