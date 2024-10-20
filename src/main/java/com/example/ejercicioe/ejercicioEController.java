@@ -7,19 +7,20 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import model.Persona;
 
+import java.io.IOException;
+
 /**
- * Controlador para la vista del ejercicio D que gestiona una lista de personas.
- * Permite agregar personas en una nueva pantalla modal.
+ * Controlador que maneja la ventana principal con la lista de personas.
  */
 public class ejercicioEController {
-
-    @FXML
-    private Button agregarButton;
 
     @FXML
     private TableView<Persona> personTable;
@@ -33,11 +34,19 @@ public class ejercicioEController {
     @FXML
     private TableColumn<Persona, Integer> edadColumn;
 
+    @FXML
+    private Button agregarButton;
+
+    @FXML
+    private Button modificarButton;
+
+    @FXML
+    private Button eliminarButton;
+
     private ObservableList<Persona> personasList = FXCollections.observableArrayList();
 
     /**
-     * Inicializa la vista y vincula las columnas de la tabla con los datos de las personas.
-     * Hace que cada columna de la tabla se corresponda con los valores de los campos de texto.
+     * Inicializa la tabla y vincula las columnas a los datos de las personas.
      */
     @FXML
     public void initialize() {
@@ -49,29 +58,77 @@ public class ejercicioEController {
     }
 
     /**
-     * Abre una nueva ventana modal para agregar una persona.
+     * Método que abre una ventana modal para agregar o modificar una persona dependiendo del botón que se haya pulsado.
      *
-     * @param actionEvent Evento disparado por el botón Agregar.
+     * @param event Evento disparado por los botones "Agregar Persona" o "Modificar Persona".
      */
     @FXML
-    private void abrirVentanaAgregar(ActionEvent actionEvent) {
+    private void abrirVentanaAgregar(ActionEvent event) {
         try {
-
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("ejercicioEmodal.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/example/ejercicioe/ejercicioEmodal.fxml"));
             Parent modalRoot = loader.load();
             Stage modalStage = new Stage();
-            modalStage.setTitle("Nueva Persona");
-            modalStage.setScene(new Scene(modalRoot));
             modalStage.initModality(Modality.WINDOW_MODAL);
             modalStage.initOwner(agregarButton.getScene().getWindow());
+
             ejercicioEModalController modalController = loader.getController();
-            modalController.setPersonasList(personasList);
-            modalStage.setResizable(false);
+
+            if (event.getSource() == agregarButton) {
+                modalStage.setTitle("Agregar Persona");
+                modalController.setPersonasList(personasList);
+            } else if (event.getSource() == modificarButton) {
+                Persona personaSeleccionada = personTable.getSelectionModel().getSelectedItem();
+                if (personaSeleccionada == null) {
+                    mostrarAlerta("No hay ninguna persona seleccionada", "Por favor, seleccione una persona para editar.");
+                    return; // No continuar si no hay selección
+                }
+                modalStage.setTitle("Editar Persona");
+                modalController.setPersonasList(personasList);
+                modalController.setPersonaAEditar(personaSeleccionada);
+            }
+
+            modalStage.setScene(new Scene(modalRoot));
             modalStage.showAndWait();
 
-        } catch (Exception e) {
+            // Refrescar la tabla después de modificar
+            personTable.refresh();
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
-}
 
+    /**
+     * Método que elimina una persona seleccionada de la tabla.
+     * Si no hay una persona seleccionada, muestra un mensaje de alerta.
+     */
+    @FXML
+    private void eliminarPersona(ActionEvent event) {
+        // Obtener la persona seleccionada
+        Persona personaSeleccionada = personTable.getSelectionModel().getSelectedItem();
+
+        if (personaSeleccionada == null) {
+            // Si no hay ninguna persona seleccionada, mostrar alerta
+            mostrarAlerta("No hay ninguna persona seleccionada", "Por favor, seleccione una persona para eliminar.");
+        } else {
+            // Eliminar la persona seleccionada de la lista
+            personasList.remove(personaSeleccionada);
+            // Mostrar un mensaje de confirmación
+            mostrarAlerta("Persona eliminada", "La persona ha sido eliminada con éxito.");
+        }
+    }
+
+    /**
+     * Muestra una alerta con el título y el mensaje especificado.
+     *
+     * @param titulo El título de la alerta.
+     * @param mensaje El mensaje de la alerta.
+     */
+    private void mostrarAlerta(String titulo, String mensaje) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(titulo);
+        alert.setHeaderText(null);
+        alert.setContentText(mensaje);
+        alert.showAndWait();
+    }
+}

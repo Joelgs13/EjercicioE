@@ -2,12 +2,13 @@ package com.example.ejercicioe;
 
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import model.Persona;
 
 /**
- * Controlador para la ventana modal que permite agregar una nueva persona. (y futuramente más funciones)
+ * Controlador para la ventana modal que permite agregar o editar una persona.
  */
 public class ejercicioEModalController {
 
@@ -20,13 +21,12 @@ public class ejercicioEModalController {
     @FXML
     private TextField edadField;
 
-    @FXML
-    private Button agregarButton;
-
     private ObservableList<Persona> personasList;
+    private Persona personaAEditar = null; // Referencia a la persona a editar, si existe
+    private boolean esModificacion = false;
 
     /**
-     * Establece la lista de personas a la que se agregará la nueva persona.
+     * Establece la lista de personas a la que se agregará o modificará la persona.
      *
      * @param personasList Lista de personas.
      */
@@ -35,18 +35,39 @@ public class ejercicioEModalController {
     }
 
     /**
-     * Método para agregar una nueva persona a la lista de la ventana principal.
-     * Realiza la validación de los datos, muestra errores si los hay y agrega la persona si todo es correcto.
+     * Establece la persona que se va a editar.
+     * Si se llama a este método, se sobreescribe la persona seleccionada y el modal se comportará como un editor.
+     *
+     * @param persona Persona cuyos datos se van a editar.
+     */
+    public void setPersonaAEditar(Persona persona) {
+        this.personaAEditar = persona;
+        this.esModificacion = true;
+        rellenarCampos(persona); // Rellenar los campos con la persona a editar
+    }
+
+    /**
+     * Rellena los campos de texto con los datos de una persona existente para editarla.
+     *
+     * @param persona Persona cuyos datos se van a editar.
+     */
+    public void rellenarCampos(Persona persona) {
+        nombreField.setText(persona.getNombre());
+        apellidosField.setText(persona.getApellido());
+        edadField.setText(String.valueOf(persona.getEdad()));
+    }
+
+    /**
+     * Método que maneja el evento de agregar o editar una persona. Este método es llamado cuando
+     * se pulsa el botón "Guardar" en la ventana modal.
      */
     @FXML
     private void aniadirPersona() {
-        // Obtener los valores ingresados por el usuario
         String nombre = nombreField.getText().trim();
         String apellidos = apellidosField.getText().trim();
         String edadText = edadField.getText().trim();
-        StringBuilder errores = new StringBuilder();  // Acumulador de errores
+        StringBuilder errores = new StringBuilder();
 
-        // Validaciones
         if (nombre.isEmpty()) {
             errores.append("El campo 'Nombre' no puede estar vacío.\n");
         }
@@ -64,30 +85,48 @@ public class ejercicioEModalController {
             errores.append("El campo 'Edad' debe ser un número entero válido.\n");
         }
 
-        // Mostrar errores si hay alguno
         if (errores.length() > 0) {
             mostrarError(errores.toString());
-            return;  // No continuar si hay errores
+            return;
         }
 
-        // Crear una nueva persona
-        Persona nuevaPersona = new Persona(nombre, apellidos, edad);
+        if (esModificacion && personaAEditar != null) {
+            // Si estamos modificando, actualizamos los valores de la persona existente
+            personaAEditar.setNombre(nombre);
+            personaAEditar.setApellido(apellidos);
+            personaAEditar.setEdad(edad);
 
-        // Verificar si la persona ya existe en la lista
-        for (Persona persona : personasList) {
-            if (persona.equals(nuevaPersona)) {
-                mostrarError("Persona duplicada: Ya existe una persona con los mismos datos.");
-                return;  // No continuar si ya existe una persona con los mismos datos
+            // Mostrar el mensaje de éxito
+            mostrarInformacion("Persona modificada con éxito.");
+        } else {
+            // Verificar que la persona no sea duplicada antes de agregarla
+            Persona nuevaPersona = new Persona(nombre, apellidos, edad);
+            for (Persona persona : personasList) {
+                if (persona.equals(nuevaPersona)) {
+                    mostrarError("Persona duplicada: Ya existe una persona con los mismos datos.");
+                    return;
+                }
             }
+            // Agregar la nueva persona si no es duplicada
+            personasList.add(nuevaPersona);
+            mostrarInformacion("Persona agregada con éxito.");
         }
 
-        // Si todo es correcto, agregar la nueva persona a la lista
-        personasList.add(nuevaPersona);
+        // Cerrar la ventana modal
+        cerrarVentana();
+    }
 
-        // Mostrar mensaje de éxito
-        mostrarInformacion("Persona agregada con éxito.");
-
-        // No cerrar la ventana aquí, la ventana solo se cierra con el botón "Cancelar"
+    /**
+     * Muestra un mensaje de éxito en una alerta emergente.
+     *
+     * @param mensaje Mensaje de éxito a mostrar.
+     */
+    private void mostrarInformacion(String mensaje) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Éxito");
+        alert.setHeaderText(null);
+        alert.setContentText(mensaje);
+        alert.showAndWait();
     }
 
     /**
@@ -104,25 +143,11 @@ public class ejercicioEModalController {
     }
 
     /**
-     * Muestra un mensaje informativo en una alerta emergente.
-     *
-     * @param mensaje Mensaje informativo a mostrar.
-     */
-    private void mostrarInformacion(String mensaje) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Éxito");
-        alert.setHeaderText(null);
-        alert.setContentText(mensaje);
-        alert.showAndWait();
-    }
-
-    /**
      * Cierra la ventana modal.
      */
     @FXML
     private void cerrarVentana() {
-        Stage stage = (Stage) agregarButton.getScene().getWindow();
+        Stage stage = (Stage) nombreField.getScene().getWindow();
         stage.close();
     }
 }
-
