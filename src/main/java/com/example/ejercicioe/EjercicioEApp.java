@@ -8,10 +8,10 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 
-public class HelloApplication extends Application {
+public class EjercicioEApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
-        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("EjercicioE.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(EjercicioEApp.class.getResource("EjercicioE.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 800, 500);
         Image icon = new Image(getClass().getResourceAsStream("/iconos/cuaderno.png"));
         stage.getIcons().add(icon);
